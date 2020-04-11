@@ -27,36 +27,6 @@
 #
 #
 
-on init
-    write /dev/stune/foreground/schedtune.prefer_idle 1
-    write /dev/stune/top-app/schedtune.boost 10
-    write /dev/stune/top-app/schedtune.prefer_idle 1
-
-    # Setup permission for Power HAL
-    chown system system /dev/stune/top-app/schedtune.boost
-    chown system system /sys/class/kgsl/kgsl-3d0/devfreq/min_freq
-    chown system system /sys/class/kgsl/kgsl-3d0/devfreq/max_freq
-    chown system system /sys/class/kgsl/kgsl-3d0/force_rail_on
-    chown system system /sys/class/kgsl/kgsl-3d0/force_clk_on
-    chown system system /sys/class/kgsl/kgsl-3d0/idle_timer
-    chown system system /sys/class/devfreq/soc:qcom,cpubw/min_freq
-    chown system system /sys/class/devfreq/soc:qcom,cpubw/bw_hwmon/hyst_trigger_count
-    chown system system /sys/class/devfreq/soc:qcom,cpubw/bw_hwmon/hist_memory
-    chown system system /sys/class/devfreq/soc:qcom,cpubw/bw_hwmon/sample_ms
-    chown system system /sys/class/devfreq/soc:qcom,memlat-cpu4/min_freq
-
-    chmod 0664 /dev/stune/top-app/schedtune.boost
-    chmod 0664 /sys/class/kgsl/kgsl-3d0/devfreq/min_freq
-    chmod 0664 /sys/class/kgsl/kgsl-3d0/devfreq/max_freq
-    chmod 0664 /sys/class/kgsl/kgsl-3d0/force_rail_on
-    chmod 0664 /sys/class/kgsl/kgsl-3d0/force_clk_on
-    chmod 0664 /sys/class/kgsl/kgsl-3d0/idle_timer
-    chmod 0664 /sys/class/devfreq/soc:qcom,cpubw/min_freq
-    chmod 0664 /sys/class/devfreq/soc:qcom,cpubw/bw_hwmon/hyst_trigger_count
-    chmod 0664 /sys/class/devfreq/soc:qcom,cpubw/bw_hwmon/hist_memory
-    chmod 0664 /sys/class/devfreq/soc:qcom,cpubw/bw_hwmon/sample_ms
-    chmod 0664 /sys/class/devfreq/soc:qcom,memlat-cpu4/min_freq
-
 on fs
     wait /dev/block/platform/soc/${ro.boot.bootdevice}
     symlink /dev/block/platform/soc/${ro.boot.bootdevice} /dev/block/bootdevice
@@ -66,18 +36,12 @@ on fs
     chmod 0771 /mnt/vendor/persist
     mkdir /mnt/vendor/persist/data 0700 system system
     mkdir /mnt/vendor/persist/bms 0700 root system
-    exec u:r:vendor_toolbox:s0 root audio bluetooth graphics media net_raw system vendor_rfs vendor_rfs_shared -- /vendor/bin/toybox_vendor find /mnt/vendor/persist -type d -exec /vendor/bin/toybox_vendor setfattr -x security.sehash {} \;
     restorecon_recursive /mnt/vendor/persist
     write /sys/kernel/boot_adsp/boot 1
 
-    mkdir /mnt/vendor/dsp 0770 root root
-    copy /vendor/dsp/cdsp/fastrpc_shell_3 /mnt/vendor/dsp/fastrpc_shell_3
-    chmod 0644 /mnt/vendor/dsp/fastrpc_shell_3
-    mount none /mnt/vendor/dsp/fastrpc_shell_3 /vendor/dsp/cdsp/fastrpc_shell_3 bind
-
 on post-fs
     start vendor.qseecomd
-    wait_for_prop vendor.sys.listeners.registered true
+    exec - system system -- /vendor/bin/init.qti.qseecomd.sh
     write /dev/ipa 1
 
 on init
@@ -135,10 +99,6 @@ on boot
     chown system system /sys/touchpanel/capacitive_keys
     chown system system /sys/touchpanel/double_tap
     chown system system /sys/touchpanel/reversed_keys
-
-    chmod 0664 /sys/touchpanel/capacitive_keys
-    chmod 0664 /sys/touchpanel/double_tap
-    chmod 0664 /sys/touchpanel/reversed_keys
 
 #Peripheral manager
 service vendor.per_mgr /system/vendor/bin/pm-service
@@ -364,6 +324,12 @@ service vendor.imsdatadaemon /system/vendor/bin/imsdatadaemon
 #service gnss-detect /system/vendor/bin/gnss.qca1530.sh detect
 #   class core
 #   oneshot
+
+service energy-awareness /system/vendor/bin/energy-awareness
+    class main
+    user system
+    group system
+    oneshot
 
 service mdtpd /system/vendor/bin/mdtpd
     class late_start

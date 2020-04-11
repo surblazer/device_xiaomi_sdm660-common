@@ -296,6 +296,7 @@ PRODUCT_PACKAGES += \
     init.qcom.usb.sh \
     init.recovery.qcom.rc \
     init.target.rc \
+    init.performance.sdm660.rc \
     ueventd.qcom.rc
 
 # IPv6
